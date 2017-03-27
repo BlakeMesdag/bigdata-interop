@@ -253,6 +253,15 @@ public class CredentialFactory {
     }
   }
 
+  public Credential getCredentialFromHadoopArguments(String accessToken, String expirationMs) {
+    GoogleCredential hadoopCredentials = new GoogleCredential();
+
+    hadoopCredentials.setAccessToken(accessToken);
+    hadoopCredentials.setExpirationTimeMilliseconds(Long.valueOf(expirationMs).longValue());
+
+    return hadoopCredentials;
+  }
+
   /**
    * Initialized OAuth2 credential for the "installed application" flow; where the credential
    * typically represents an actual end user (instead of a service account), and is stored

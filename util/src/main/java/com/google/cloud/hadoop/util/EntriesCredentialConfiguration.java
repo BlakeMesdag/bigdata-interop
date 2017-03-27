@@ -96,6 +96,14 @@ public class EntriesCredentialConfiguration extends CredentialConfiguration {
   public static final String ENABLE_NULL_CREDENTIAL_SUFFIX = ".auth.null.enable";
 
   /**
+  * For OAuth-based Installed App authentication passed through to applications running on
+  * a distributed cluster such as YARN or Mesos. These tokens should be generated and valid
+  * for longer than the approximate runtime of the remote application.
+  */
+  public static final String OAUTH_CLIENT_ACCESS_TOKEN = ".auth.client.access_token";
+  public static final String OAUTH_CLIENT_EXPIRATION_MS = ".auth.client.access_token_expiration_ms";
+
+  /**
    * Builder for constructing CredentialConfiguration instances.
    */
   public abstract static class Builder<B extends Builder<B, T>,
@@ -216,6 +224,12 @@ public class EntriesCredentialConfiguration extends CredentialConfiguration {
       if (getOAuthCredentialFile() != null) {
         configuration.set(prefix + OAUTH_CLIENT_FILE_SUFFIX, getOAuthCredentialFile());
       }
+      if (getOAuthClientAccessToken() != null) {
+        configuration.set(prefix + OAUTH_CLIENT_ACCESS_TOKEN, getOAuthClientAccessToken());
+      }
+      if (getOAuthClientAccessTokenExpirationMs() != null) {
+        configuration.set(prefix + OAUTH_CLIENT_EXPIRATION_MS, getOAuthClientAccessTokenExpirationMs());
+      }
 
       configuration.setBoolean(prefix + ENABLE_NULL_CREDENTIAL_SUFFIX, isNullCredentialEnabled());
     }
@@ -263,6 +277,16 @@ public class EntriesCredentialConfiguration extends CredentialConfiguration {
       String oAuthCredentialPath = entries.get(prefix + OAUTH_CLIENT_FILE_SUFFIX);
       if (oAuthCredentialPath != null) {
         setOAuthCredentialFile(oAuthCredentialPath);
+      }
+
+      String oAuthClientAccessToken = entries.get(prefix + OAUTH_CLIENT_ACCESS_TOKEN);
+      if (oAuthClientAccessToken != null) {
+        setOAuthClientAccessToken(oAuthClientAccessToken);
+      }
+
+      String oAuthClientAccessTokenExpirationMs = entries.get(prefix + OAUTH_CLIENT_EXPIRATION_MS);
+      if (oAuthClientAccessTokenExpirationMs != null) {
+        setOAuthClientAccessTokenExpirationMs(oAuthClientAccessTokenExpirationMs);
       }
 
       Optional<Boolean> enableNullCredential = maybeGetBoolean(entries,
