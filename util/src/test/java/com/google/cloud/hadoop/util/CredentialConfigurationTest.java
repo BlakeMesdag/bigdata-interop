@@ -15,6 +15,8 @@
 package com.google.cloud.hadoop.util;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -87,10 +89,12 @@ public class CredentialConfigurationTest {
   public void p12KeyfileUsedWhenConfigured() throws IOException, GeneralSecurityException  {
     CredentialFactory mockCredentialFactory = mock(CredentialFactory.class);
 
-    CredentialConfiguration configuration = new CredentialConfiguration();
+    CredentialConfiguration configuration = spy(new CredentialConfiguration());
     configuration.setCredentialFactory(mockCredentialFactory);
     configuration.setServiceAccountEmail("foo@example.com");
     configuration.setServiceAccountKeyFile("exampleKeyfile");
+
+    when(configuration.serviceAccountFileExists()).thenReturn(true);
 
     configuration.getCredential(TEST_SCOPES);
 
@@ -105,9 +109,11 @@ public class CredentialConfigurationTest {
   public void jsonKeyFileUsedWhenConfigured() throws IOException, GeneralSecurityException {
     CredentialFactory mockCredentialFactory = mock(CredentialFactory.class);
 
-    CredentialConfiguration configuration = new CredentialConfiguration();
+    CredentialConfiguration configuration = spy(new CredentialConfiguration());
     configuration.setCredentialFactory(mockCredentialFactory);
     configuration.setServiceAccountJsonKeyFile("jsonExampleKeyFile");
+
+    when(configuration.serviceAccountFileExists()).thenReturn(true);
 
     configuration.getCredential(TEST_SCOPES);
 

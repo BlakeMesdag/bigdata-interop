@@ -20,6 +20,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import java.io.IOException;
+import java.io.File;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import org.slf4j.Logger;
@@ -61,15 +62,13 @@ public class CredentialConfiguration {
 
     // By default, we want to use service accounts with the meta-data service (assuming we're
     // running in GCE).
-    if (isServiceAccountEnabled()) {
+    if (isServiceAccountEnabled() && shouldUseMetadataService()) {
       LOG.debug("Using service account credentials");
+      LOG.debug("Getting service account credentials from meta data service.");
 
-      if (shouldUseMetadataService()) {
-        LOG.debug("Getting service account credentials from meta data service.");
-        //TODO(user): Validate the returned credential has access to the given scopes.
-        return credentialFactory.getCredentialFromMetadataServiceAccount();
-      }
-
+      //TODO(user): Validate the returned credential has access to the given scopes.
+      return credentialFactory.getCredentialFromMetadataServiceAccount();
+    } else if (isServiceAccountEnabled() && serviceAccountFileExists()) {
       if (!Strings.isNullOrEmpty(serviceAccountJsonKeyFile)) {
         LOG.debug("Using JSON keyfile {}", serviceAccountJsonKeyFile);
         Preconditions.checkArgument(
@@ -102,6 +101,18 @@ public class CredentialConfiguration {
 
     LOG.error("Credential configuration is not valid. Configuration: {}", this);
     throw new IllegalStateException("No valid credential configuration discovered.");
+  }
+
+  public boolean serviceAccountFileExists() {
+    String accountFile = null;
+
+    if (!Strings.isNullOrEmpty(serviceAccountKeyFile)) {
+      accountFile = serviceAccountKeyFile;
+    } else if (!Strings.isNullOrEmpty(serviceAccountJsonKeyFile)) {
+      accountFile = serviceAccountJsonKeyFile;
+    }
+
+    return (new File(accountFile)).exists();
   }
 
   public boolean shouldUseMetadataService() {
