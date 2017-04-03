@@ -32,6 +32,7 @@ import com.google.api.client.http.HttpBackOffUnsuccessfulResponseHandler;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.GenericJson;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.JsonObjectParser;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -48,8 +49,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.api.client.util.Key;
 
 /**
  * Miscellaneous helper methods for getting a {@code Credential} from various sources.
@@ -135,6 +138,39 @@ public class CredentialFactory {
         e.initCause(exception);
         throw e;
       }
+    }
+  }
+
+  public static class TokenServerCredentials extends GenericJson {
+    @Key("access_token")
+    private String access_token;
+
+    public String getAccessToken() {
+      return access_token;
+    }
+
+    @Key("client_id")
+    private String clientId;
+
+    public String getClientId() {
+      return clientId;
+    }
+
+    @Key("client_secret")
+    private String clientSecret;
+
+    public String getClientSecret() {
+      return clientSecret;
+    }
+
+    @Key("expires_at")
+    private String expiresAt;
+
+    @Key("refresh_token")
+    private String refreshToken;
+
+    public String getRefreshToken() {
+      return refreshToken;
     }
   }
 
@@ -253,13 +289,34 @@ public class CredentialFactory {
     }
   }
 
-  public Credential getCredentialFromHadoopArguments(String accessToken, String expirationMs) {
-    GoogleCredential hadoopCredentials = new GoogleCredential();
+  public Credential getCredentialFromTokenServer(String serverUrl, String sharedSecret)
+      throws IOException, GeneralSecurityException {
+    GenericUrl tokenUrl = new GenericUrl(serverUrl);
+    HttpRequest request = getHttpTransport()
+      .createRequestFactory()
+      .buildGetRequest(tokenUrl);
 
-    hadoopCredentials.setAccessToken(accessToken);
-    hadoopCredentials.setExpirationTimeMilliseconds(Long.valueOf(expirationMs).longValue());
+    request.setParser(new JsonObjectParser(JSON_FACTORY));
 
-    return hadoopCredentials;
+    TokenServerCredentials tokenCredentials = request.execute().parseAs(TokenServerCredentials.class);
+
+    GoogleClientSecrets.Details details = new GoogleClientSecrets.Details();
+    details.setClientId(tokenCredentials.getClientId());
+    details.setClientSecret(tokenCredentials.getClientSecret());
+
+    GoogleClientSecrets clientSecrets = new GoogleClientSecrets();
+    clientSecrets.setInstalled(details);
+
+    GoogleCredential credentials = new GoogleCredential.Builder()
+      .setClientSecrets(clientSecrets)
+      .setJsonFactory(JSON_FACTORY)
+      .setTransport(getHttpTransport())
+      .build();
+
+    credentials.setAccessToken(tokenCredentials.getAccessToken());
+    credentials.setRefreshToken(tokenCredentials.getRefreshToken());
+
+    return credentials;
   }
 
   /**

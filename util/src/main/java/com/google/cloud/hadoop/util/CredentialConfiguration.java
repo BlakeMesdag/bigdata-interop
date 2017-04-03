@@ -37,8 +37,9 @@ public class CredentialConfiguration {
   private String clientId = null;
   private String clientSecret = null;
   private String oAuthCredentialFile = null;
-  private String oAuthClientAccessToken = null;
-  private String oAuthClientAccessTokenExpirationMs = null;
+  private String tokenServerUrl = null;
+  private Optional<Boolean> isTokenServerEnabled = Optional.absent();
+  private String tokenServerSharedSecret = null;
   private boolean nullCredentialEnabled = false;
   private CredentialFactory credentialFactory = new CredentialFactory();
 
@@ -91,10 +92,10 @@ public class CredentialConfiguration {
 
       return credentialFactory.getCredentialFromPrivateKeyServiceAccount(serviceAccountEmail,
           serviceAccountKeyFile, scopes);
-    } else if (oAuthClientAccessToken != null && oAuthClientAccessTokenExpirationMs != null) {
-      LOG.debug("Using supplied access token for pre-generated access.");
+    } else if (isTokenServerEnabled()) {
+      LOG.debug("Using token server to retrieve user credentials.");
 
-      return credentialFactory.getCredentialFromHadoopArguments(oAuthClientAccessToken, oAuthClientAccessTokenExpirationMs);
+      return credentialFactory.getCredentialFromTokenServer(tokenServerUrl, tokenServerSharedSecret);
     } else if (oAuthCredentialFile != null && clientId != null && clientSecret != null) {
       LOG.debug("Using installed app credentials in file {}", oAuthCredentialFile);
 
@@ -115,28 +116,36 @@ public class CredentialConfiguration {
         && Strings.isNullOrEmpty(serviceAccountJsonKeyFile);
   }
 
+  public String getTokenServerUrl() {
+    return tokenServerUrl;
+  }
+
+  public void setTokenServerUrl(String tokenServerUrl) {
+    this.tokenServerUrl = tokenServerUrl;
+  }
+
+  public boolean isTokenServerEnabled() {
+    return isTokenServerEnabled.isPresent() && isTokenServerEnabled.get();
+  }
+
+  public void setEnableTokenServer(boolean enableTokenServer) {
+    this.isTokenServerEnabled = Optional.of(enableTokenServer);
+  }
+
+  public String getTokenServerSharedSecret() {
+    return this.tokenServerSharedSecret;
+  }
+
+  public void setTokenServerSharedSecret(String tokenServerSharedSecret) {
+    this.tokenServerSharedSecret = tokenServerSharedSecret;
+  }
+
   public String getOAuthCredentialFile() {
     return oAuthCredentialFile;
   }
 
   public void setOAuthCredentialFile(String oAuthCredentialFile) {
     this.oAuthCredentialFile = oAuthCredentialFile;
-  }
-
-  public String getOAuthClientAccessToken() {
-    return this.oAuthClientAccessToken;
-  }
-
-  public void setOAuthClientAccessToken(String oAuthClientAccessToken) {
-    this.oAuthClientAccessToken = oAuthClientAccessToken;
-  }
-
-  public String getOAuthClientAccessTokenExpirationMs() {
-    return this.oAuthClientAccessTokenExpirationMs;
-  }
-
-  public void setOAuthClientAccessTokenExpirationMs(String oAuthClientAccessTokenExpirationMs) {
-    this.oAuthClientAccessTokenExpirationMs = oAuthClientAccessTokenExpirationMs;
   }
 
   public boolean isNullCredentialEnabled() {
